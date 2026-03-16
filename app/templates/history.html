@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>PhishGuard | سجل التحليلات</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/static/css/style.css" rel="stylesheet">
+  <style>
+    .stats-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+    }
+    .history-table {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .history-table thead {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .history-table tbody tr:hover {
+      background-color: #f8f9ff;
+      transform: translateY(-1px);
+      transition: all 0.2s ease;
+    }
+    .badge-status {
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+    .confidence-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: #e9ecef;
+      overflow: hidden;
+      margin-top: 0.25rem;
+    }
+    .confidence-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    .preview-text {
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .filter-section {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .search-box {
+      position: relative;
+    }
+    .search-box i {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6c757d;
+    }
+    .search-box input {
+      padding-right: 45px;
+      border-radius: 25px;
+      border: 2px solid #e9ecef;
+      transition: border-color 0.3s ease;
+    }
+    .search-box input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    .type-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+    .type-email { background: linear-gradient(135deg, #ff6b6b, #ff8e53); }
+    .type-url { background: linear-gradient(135deg, #4ecdc4, #44a08d); }
+    .type-combined { background: linear-gradient(135deg, #a8e6cf, #dcedc1); }
+  </style>
+</head>
+<body class="bg-soft">
+  <nav class="navbar bg-white border-bottom sticky-top shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="/">
+        <i class="bi bi-shield-check text-primary me-2"></i>
+        PhishGuard
+      </a>
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-primary btn-sm" href="/">
+          <i class="bi bi-house-door me-1"></i>
+          الرئيسية
+        </a>
+        <button class="btn btn-outline-secondary btn-sm" onclick="exportData()">
+          <i class="bi bi-download me-1"></i>
+          تصدير
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <!-- Statistics Cards -->
+    <div class="stats-card">
+      <div class="row g-4">
+        <div class="col-md-3">
+          <div class="text-center">
+            <h2 class="mb-1" id="totalCount">0</h2>
+            <p class="mb-0 opacity-75">إجمالي التحليلات</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center">
+            <h2 class="mb-1 text-success" id="safeCount">0</h2>
+            <p class="mb-0 opacity-75">آمن</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center">
+            <h2 class="mb-1 text-warning" id="suspiciousCount">0</h2>
+            <p class="mb-0 opacity-75">مشبوه</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center">
+            <h2 class="mb-1 text-danger" id="phishingCount">0</h2>
+            <p class="mb-0 opacity-75">تصيد</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">البحث</label>
+          <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" class="form-control" id="searchInput" placeholder="ابحث في النص أو الرابط...">
+          </div>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">النوع</label>
+          <select class="form-select" id="typeFilter">
+            <option value="">الكل</option>
+            <option value="email">بريد إلكتروني</option>
+            <option value="url">رابط</option>
+            <option value="combined">مجمع</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">النتيجة</label>
+          <select class="form-select" id="resultFilter">
+            <option value="">الكل</option>
+            <option value="Safe">آمن</option>
+            <option value="Suspicious">مشبوه</option>
+            <option value="Phishing">تصيد</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">الترتيب</label>
+          <select class="form-select" id="sortOrder">
+            <option value="desc">الأحدث أولاً</option>
+            <option value="asc">الأقدم أولاً</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary w-100" onclick="applyFilters()">
+            <i class="bi bi-funnel me-1"></i>
+            تطبيق الفلاتر
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Header -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h4 class="fw-bold mb-0">
+        <i class="bi bi-clock-history text-primary me-2"></i>
+        سجل التحليلات
+      </h4>
+      <div class="d-flex gap-2 align-items-center">
+        <span class="text-secondary small" id="resultsCount">عرض 0 نتيجة</span>
+        <button class="btn btn-outline-secondary btn-sm" onclick="refreshData()">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- History Table -->
+    <div class="history-table">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="historyTable">
+          <thead>
+            <tr>
+              <th class="border-0">#</th>
+              <th class="border-0">النوع</th>
+              <th class="border-0">النتيجة</th>
+              <th class="border-0">الثقة</th>
+              <th class="border-0">المحتوى</th>
+              <th class="border-0">التاريخ</th>
+              <th class="border-0">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            {% for r in rows %}
+            <tr data-type="{{ r['input_type'] }}" data-result="{{ r['label'] }}" data-content="{{ r['email_preview'] or r['url_preview'] }}">
+              <td class="fw-semibold">{{ r["id"] }}</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="type-icon type-{{ r['input_type'] }}">
+                    {% if r['input_type'] == 'email' %}
+                      <i class="bi bi-envelope-fill text-white"></i>
+                    {% elif r['input_type'] == 'url' %}
+                      <i class="bi bi-link-45deg text-white"></i>
+                    {% else %}
+                      <i class="bi bi-layers-fill text-white"></i>
+                    {% endif %}
+                  </div>
+                  <span class="fw-medium">{{ r["input_type"] }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="badge badge-status
+                  {% if r['label']=='Safe' %} bg-success
+                  {% elif r['label']=='Suspicious' %} bg-warning
+                  {% else %} bg-danger {% endif %}">
+                  {% if r['label']=='Safe' %}<i class="bi bi-check-circle me-1"></i>
+                  {% elif r['label']=='Suspicious' %}<i class="bi bi-exclamation-triangle me-1"></i>
+                  {% else %}<i class="bi bi-x-circle me-1"></i>{% endif %}
+                  {{ r["label"] }}
+                </span>
+              </td>
+              <td>
+                <div class="fw-semibold">{{ (r["confidence"] * 100) | round(1) }}%</div>
+                <div class="confidence-bar">
+                  <div class="confidence-fill
+                    {% if r['confidence'] >= 0.8 %} bg-success
+                    {% elif r['confidence'] >= 0.5 %} bg-warning
+                    {% else %} bg-danger {% endif %}
+                    " data-confidence="{{ r.confidence * 100 }}"></div>
+                </div>
+              </td>
+              <td>
+                <div class="preview-text" title="{{ r['email_preview'] or r['url_preview'] }}">
+                  {{ r['email_preview'] or r['url_preview'] }}
+                </div>
+              </td>
+              <td>
+                <div class="small text-secondary">{{ r["created_at"] }}</div>
+              </td>
+              <td>
+                <div class="btn-group" role="group">
+                  <button class="btn btn-sm btn-outline-primary view-details-btn" data-id="{{ r.id }}" title="عرض التفاصيل">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger delete-record-btn" data-id="{{ r.id }}" title="حذف">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-5" style="display: none;">
+      <i class="bi bi-inbox display-1 text-muted"></i>
+      <h5 class="mt-3 text-muted">لا توجد نتائج</h5>
+      <p class="text-muted">لم يتم العثور على أي سجلات تطابق معايير البحث</p>
+    </div>
+  </main>
+  <!-- Details Modal -->
+  <div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">تفاصيل التحليل</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="modalContent">
+          <!-- Content will be loaded dynamically -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Initialize statistics
+    function updateStatistics() {
+      const rows = document.querySelectorAll('#tableBody tr');
+      let total = 0, safe = 0, suspicious = 0, phishing = 0;
+      
+      rows.forEach(row => {
+        const result = row.dataset.result;
+        total++;
+        if (result === 'Safe') safe++;
+        else if (result === 'Suspicious') suspicious++;
+        else if (result === 'Phishing') phishing++;
+      });
+      
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('safeCount').textContent = safe;
+      document.getElementById('suspiciousCount').textContent = suspicious;
+      document.getElementById('phishingCount').textContent = phishing;
+      document.getElementById('resultsCount').textContent = `عرض ${total} نتيجة`;
+    }
+    
+    // Apply filters
+    function applyFilters() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const typeFilter = document.getElementById('typeFilter').value;
+      const resultFilter = document.getElementById('resultFilter').value;
+      const sortOrder = document.getElementById('sortOrder').value;
+      
+      const rows = Array.from(document.querySelectorAll('#tableBody tr'));
+      let visibleCount = 0;
+      
+      // Filter rows
+      rows.forEach(row => {
+        const content = row.dataset.content.toLowerCase();
+        const type = row.dataset.type;
+        const result = row.dataset.result;
+        
+        const matchesSearch = !searchTerm || content.includes(searchTerm);
+        const matchesType = !typeFilter || type === typeFilter;
+        const matchesResult = !resultFilter || result === resultFilter;
+        
+        if (matchesSearch && matchesType && matchesResult) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+      
+      // Sort rows
+      const tbody = document.getElementById('tableBody');
+      const visibleRows = rows.filter(row => row.style.display !== 'none');
+      
+      visibleRows.sort((a, b) => {
+        const aId = parseInt(a.cells[0].textContent);
+        const bId = parseInt(b.cells[0].textContent);
+        return sortOrder === 'desc' ? bId - aId : aId - bId;
+      });
+      
+      visibleRows.forEach(row => tbody.appendChild(row));
+      
+      // Update UI
+      document.getElementById('resultsCount').textContent = `عرض ${visibleCount} نتيجة`;
+      document.getElementById('emptyState').style.display = visibleCount === 0 ? 'block' : 'none';
+      document.querySelector('.history-table').style.display = visibleCount === 0 ? 'none' : 'block';
+    }
+    
+    // View details
+    function viewDetails(id) {
+      // This would typically fetch details from the server
+      const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+      document.getElementById('modalContent').innerHTML = `
+        <div class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">جاري التحميل...</span>
+          </div>
+          <p class="mt-2">جاري تحميل التفاصيل...</p>
+        </div>
+      `;
+      modal.show();
+      
+      // Simulate loading details
+      setTimeout(() => {
+        document.getElementById('modalContent').innerHTML = `
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">رقم التحليل</label>
+              <p class="form-control-plaintext">${id}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">التاريخ</label>
+              <p class="form-control-plaintext">${new Date().toLocaleString('ar-SA')}</p>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">ملاحظات</label>
+              <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                هذه ميزة تجريبية. سيتم إضافة المزيد من التفاصيل قريباً.
+              </div>
+            </div>
+          </div>
+        `;
+      }, 1000);
+    }
+    
+    // Delete record
+    function deleteRecord(id) {
+      if (confirm('هل أنت متأكد من حذف هذا السجل؟')) {
+        // This would typically send a delete request to the server
+        const row = document.querySelector(`#tableBody tr:nth-child(${id})`);
+        if (row) {
+          row.remove();
+          updateStatistics();
+          applyFilters();
+        }
+      }
+    }
+    
+    // Export data
+    function exportData() {
+      const rows = document.querySelectorAll('#tableBody tr:not([style*="display: none"])');
+      let csv = 'ID,Type,Result,Confidence,Content,Date\n';
+      
+      rows.forEach(row => {
+        const cells = row.cells;
+        csv += `${cells[0].textContent},${cells[1].textContent.trim()},${cells[2].textContent.trim()},${cells[3].textContent.trim()},"${cells[4].textContent.trim()}",${cells[5].textContent}\n`;
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `phishguard_history_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    }
+    
+    // Refresh data
+    function refreshData() {
+      location.reload();
+    }
+    
+    // Search on input
+    document.getElementById('searchInput').addEventListener('input', applyFilters);
+    document.getElementById('typeFilter').addEventListener('change', applyFilters);
+    document.getElementById('resultFilter').addEventListener('change', applyFilters);
+    document.getElementById('sortOrder').addEventListener('change', applyFilters);
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      updateStatistics();
+      
+      // Apply confidence widths from data attributes
+      document.querySelectorAll('.confidence-fill').forEach(fill => {
+        const confidence = fill.getAttribute('data-confidence');
+        if (confidence) {
+          fill.style.width = confidence + '%';
+        }
+      });
+      
+      // Add event listeners for action buttons
+      document.querySelectorAll('.view-details-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          viewDetails(this.getAttribute('data-id'));
+        });
+      });
+      
+      document.querySelectorAll('.delete-record-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          deleteRecord(this.getAttribute('data-id'));
+        });
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>PhishGuard | فحص التصيّد الاحترافي</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/static/css/style.css" rel="stylesheet">
+  <style>
+    .hero-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 3rem 0;
+      margin-bottom: 2rem;
+      border-radius: 0 0 2rem 2rem;
+    }
+    .analysis-card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      border: none;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .analysis-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 50px rgba(0,0,0,0.15);
+    }
+    .result-card {
+      background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
+      border-radius: 20px;
+      border: none;
+      min-height: 400px;
+    }
+    .form-control, .form-select {
+      border-radius: 12px;
+      border: 2px solid #e9ecef;
+      transition: all 0.3s ease;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 12px;
+      padding: 0.75rem 2rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+    .btn-outline-primary {
+      border-color: #667eea;
+      color: #667eea;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .btn-outline-primary:hover {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #667eea;
+    }
+    .result-box {
+      background: #0b1020;
+      color: #e7eaf6;
+      padding: 1.5rem;
+      border-radius: 16px;
+      min-height: 200px;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.9rem;
+      border: none;
+    }
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 8px;
+      animation: pulse 2s infinite;
+    }
+    .status-ready { background: #28a745; }
+    .status-processing { background: #ffc107; }
+    .status-error { background: #dc3545; }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    .feature-card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+      height: 100%;
+    }
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+    .feature-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      font-size: 1.5rem;
+    }
+    .stats-mini {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .loading-spinner {
+      display: none;
+    }
+    .loading-spinner.active {
+      display: inline-block;
+    }
+  </style>
+</head>
+<body class="bg-soft">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="/">
+        <i class="bi bi-shield-check text-primary me-2"></i>
+        PhishGuard
+      </a>
+      <div class="ms-auto d-flex gap-2">
+        <a class="btn btn-outline-primary btn-sm" href="/history">
+          <i class="bi bi-clock-history me-1"></i>
+          سجل التحليلات
+        </a>
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('demoBtn').click()">
+          <i class="bi bi-play-circle me-1"></i>
+          تجربة سريعة
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container text-center">
+      <h1 class="display-4 fw-bold mb-3">
+        <i class="bi bi-shield-fill-check me-3"></i>
+        فحص التصيّد الاحترافي
+      </h1>
+      <p class="lead mb-4">نظام ذكي لاكتشاف محاولات التصيّد الإلكتروني بدقة عالية</p>
+      <div class="row justify-content-center">
+        <div class="col-md-8">
+          <div class="stats-mini">
+            <div class="row text-center">
+              <div class="col-4">
+                <div class="fw-bold h4 mb-0" id="totalAnalyzed">0</div>
+                <small>إجمالي التحليلات</small>
+              </div>
+              <div class="col-4">
+                <div class="fw-bold h4 mb-0" id="accuracyRate">98%</div>
+                <small>دقة التحليل</small>
+              </div>
+              <div class="col-4">
+                <div class="fw-bold h4 mb-0" id="responseTime">&lt;1s</div>
+                <small>سرعة الاستجابة</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <main class="container pb-5">
+    <div class="row g-4">
+      <!-- Analysis Form -->
+      <div class="col-lg-7">
+        <div class="analysis-card">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+              <div>
+                <h4 class="fw-bold mb-1">
+                  <i class="bi bi-search text-primary me-2"></i>
+                  فحص البريد والرابط
+                </h4>
+                <p class="text-secondary mb-0">أدخل النص والرابط للتحليل الفوري</p>
+              </div>
+              <div class="status-indicator status-ready" id="statusIndicator"></div>
+            </div>
+
+            <form id="analysisForm">
+              <div class="mb-4">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-envelope me-2"></i>
+                  نص البريد الإلكتروني
+                </label>
+                <textarea id="emailText" class="form-control" rows="6" 
+                  placeholder="مثال: عاجل: تم إيقاف حسابك. الرجاء تحقق من حسابك فوراً..."
+                  required></textarea>
+                <div class="form-text">
+                  <i class="bi bi-info-circle me-1"></i>
+                  لا تشارك بيانات حساسة حقيقية. استخدم رسائل اختبار فقط.
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-link-45deg me-2"></i>
+                  الرابط URL (اختياري)
+                </label>
+                <input id="urlText" class="form-control" 
+                  placeholder="https://example.com/login">
+              </div>
+
+              <div class="row g-2 mb-4">
+                <div class="col-md-4">
+                  <button type="button" class="btn btn-primary w-100" id="analyzeBtn">
+                    <i class="bi bi-cpu me-2"></i>
+                    <span class="btn-text">تحليل</span>
+                    <div class="spinner-border spinner-border-sm loading-spinner ms-2" role="status">
+                      <span class="visually-hidden">جاري التحميل...</span>
+                    </div>
+                  </button>
+                </div>
+                <div class="col-md-4">
+                  <button type="button" class="btn btn-outline-secondary w-100" id="clearBtn">
+                    <i class="bi bi-arrow-clockwise me-2"></i>
+                    مسح
+                  </button>
+                </div>
+                <div class="col-md-4">
+                  <button type="button" class="btn btn-outline-primary w-100" id="demoBtn">
+                    <i class="bi bi-lightbulb me-2"></i>
+                    مثال
+                  </button>
+                </div>
+              </div>
+
+              <div id="statusBar" class="alert alert-info d-none" role="alert">
+                <i class="bi bi-info-circle me-2"></i>
+                <span id="statusMessage"></span>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="row g-3 mt-3">
+          <div class="col-md-4">
+            <div class="feature-card">
+              <div class="feature-icon bg-primary bg-gradient text-white">
+                <i class="bi bi-shield-check"></i>
+              </div>
+              <h6 class="fw-bold">حماية متقدمة</h6>
+              <p class="small text-secondary mb-0">اكتشاف محاولات التصيّد بدقة عالية</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="feature-card">
+              <div class="feature-icon bg-success bg-gradient text-white">
+                <i class="bi bi-lightning"></i>
+              </div>
+              <h6 class="fw-bold">تحليل فوري</h6>
+              <p class="small text-secondary mb-0">نتائج سريعة في أقل من ثانية</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="feature-card">
+              <div class="feature-icon bg-warning bg-gradient text-white">
+                <i class="bi bi-database"></i>
+              </div>
+              <h6 class="fw-bold">سجل شامل</h6>
+              <p class="small text-secondary mb-0">تسجيل جميع التحليلات للمتابعة</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div class="col-lg-5">
+        <div class="result-card">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+              <h5 class="fw-bold mb-0">
+                <i class="bi bi-clipboard-data me-2"></i>
+                النتيجة
+              </h5>
+              <div id="resultBadge" class="badge rounded-pill bg-secondary px-3 py-2">
+                جاهز للتحليل
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <small class="text-secondary fw-semibold">مستوى الثقة</small>
+                <small class="text-secondary" id="confidenceText">-</small>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div id="confidenceBar" class="progress-bar bg-secondary" role="progressbar" 
+                  style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+
+            <pre id="resultBox" class="result-box">أدخل البيانات ثم اضغط "تحليل" للحصول على النتيجة.</pre>
+
+            <div class="d-grid gap-2 mt-4">
+              <button class="btn btn-outline-primary" onclick="copyResult()">
+                <i class="bi bi-clipboard me-2"></i>
+                نسخ النتيجة
+              </button>
+              <a href="/history" class="btn btn-outline-secondary">
+                <i class="bi bi-clock-history me-2"></i>
+                عرض سجل التحليلات
+              </a>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="small text-secondary">
+              <div class="fw-semibold text-dark mb-2">
+                <i class="bi bi-info-circle me-1"></i>
+                مخرجات النظام:
+              </div>
+              <div class="row g-2">
+                <div class="col-6">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-check-circle text-success me-2"></i>
+                    <span>التصنيف</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-percent text-primary me-2"></i>
+                    <span>نسبة الثقة</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-file-text text-info me-2"></i>
+                    <span>الشرح</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-database text-warning me-2"></i>
+                    <span>تسجيل السجل</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast Notification -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <i class="bi bi-info-circle text-primary me-2"></i>
+        <strong class="me-auto">PhishGuard</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body" id="toastMessage">
+        تم نسخ النتيجة بنجاح!
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/js/app.js"></script>
+  <script>
+    // Initialize stats
+    function updateStats() {
+      // Simulate stats - in real app, fetch from API
+      document.getElementById('totalAnalyzed').textContent = '1,247';
+      document.getElementById('accuracyRate').textContent = '98.5%';
+      document.getElementById('responseTime').textContent = '<1s';
+    }
+    
+    // Copy result function
+    function copyResult() {
+      const resultText = document.getElementById('resultBox').textContent;
+      if (resultText && resultText !== 'أدخل البيانات ثم اضغط "تحليل" للحصول على النتيجة.') {
+        navigator.clipboard.writeText(resultText).then(() => {
+          showToast('تم نسخ النتيجة بنجاح!');
+        });
+      } else {
+        showToast('لا توجد نتيجة لنسخها', 'warning');
+      }
+    }
+    
+    // Show toast notification
+    function showToast(message, type = 'success') {
+      const toastEl = document.getElementById('liveToast');
+      const toastMessage = document.getElementById('toastMessage');
+      const toastHeader = toastEl.querySelector('.toast-header i');
+      
+      toastMessage.textContent = message;
+      
+      // Update icon based on type
+      toastHeader.className = type === 'success' ? 'bi bi-check-circle text-success me-2' : 'bi bi-exclamation-triangle text-warning me-2';
+      
+      const toast = new bootstrap.Toast(toastEl);
+      toast.show();
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      updateStats();
+    });
+  </script>
+</body>
+</html>
