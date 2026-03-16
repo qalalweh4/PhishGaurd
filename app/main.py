@@ -20,6 +20,7 @@ def startup():
     init_db()
 
 def log_result(input_type, email_text, url, label, confidence, explanation, request: Request):
+    from app.db import IS_SERVERLESS
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("""
@@ -36,7 +37,9 @@ def log_result(input_type, email_text, url, label, confidence, explanation, requ
         request.headers.get("user-agent", None)
     ))
     conn.commit()
-    conn.close()
+    # Don't close the connection in serverless mode (it's shared in-memory)
+    if not IS_SERVERLESS:
+        conn.close()
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
@@ -44,6 +47,7 @@ def home(request: Request):
 
 @app.get("/history", response_class=HTMLResponse)
 def history(request: Request):
+    from app.db import IS_SERVERLESS
     conn = get_conn()
     rows = conn.execute("""
         SELECT id, input_type, label, confidence, created_at, substr(email_text,1,120) as email_preview, substr(url,1,120) as url_preview
@@ -51,7 +55,8 @@ def history(request: Request):
         ORDER BY id DESC
         LIMIT 200
     """).fetchall()
-    conn.close()
+    if not IS_SERVERLESS:
+        conn.close()
     return templates.TemplateResponse("history.html", {"request": request, "rows": rows})
 
 @app.post("/api/analyze-email")
