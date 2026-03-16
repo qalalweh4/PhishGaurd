@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,9 +13,12 @@ from app.services.url_analyzer import score_url
 from app.services.ensemble import combine
 from app.services.explain import build_explanation
 
+# Get the base directory (works both locally and on Vercel)
+BASE_DIR = Path(__file__).resolve().parent
+
 app = FastAPI(title=settings.APP_NAME)
-templates = Jinja2Templates(directory="app/templates")
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 @app.on_event("startup")
 def startup():
@@ -86,3 +91,9 @@ def api_analyze_combined(payload: AnalyzeCombinedRequest, request: Request):
     explanation = build_explanation(label, conf, reasons)
     log_result("combined", email_text if email_text else None, url if url else None, label, conf, explanation, request)
     return {"label": label, "confidence": conf, "explanation": explanation}
+
+# Initialize database on module load for serverless
+init_db()
+
+# Vercel serverless handler
+handler = app

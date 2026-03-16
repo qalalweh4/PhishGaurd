@@ -1,9 +1,14 @@
 import sqlite3
+import os
 from pathlib import Path
 from app.config import settings
 
 def get_conn():
-    db_path = Path(settings.DB_PATH)
+    # Use /tmp for serverless environments (Vercel)
+    if os.environ.get('VERCEL'):
+        db_path = Path("/tmp/phishguard.sqlite3")
+    else:
+        db_path = Path(settings.DB_PATH)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path.as_posix(), check_same_thread=False)
     conn.row_factory = sqlite3.Row
